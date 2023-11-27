@@ -6,6 +6,10 @@ MAX_FEATURES: 10000
 SEQUENCE_LENGTH: 512
 
 MODEL_NAME: "fabriceyhc/bert-base-uncased-imdb"
+MODEL_TYPES:
+  - dense
+  - bert
+
 
 LABELS_NAMES:
   - neg

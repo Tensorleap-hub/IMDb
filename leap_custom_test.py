@@ -71,7 +71,7 @@ def check_custom_test_dense():
     val = responses[1]
     responses_set = train
     dir_path = os.path.dirname(os.path.abspath(__file__))
-    model_path = 'model/exported-model.h5'
+    model_path = 'model/imdb-dense.h5'
 
     for idx in range(20):
         # get input and gt
@@ -93,7 +93,7 @@ def check_custom_test_dense():
         gt_mdata = gt_metadata(idx, responses_set)
         all_raw_md = all_raw_metadata(idx, responses_set)
 
-        # # get visualizer
+        # get visualizer
         tokenizer = leap_binder.custom_tokenizer
         texts = tokenizer.sequences_to_texts([input__tokens])
         text_input = texts[0].split(' ')
@@ -117,5 +117,6 @@ def check_custom_test_dense():
 
 
 if __name__ == '__main__':
-    check_custom_test()
+    check_custom_test() #for bert model
+    # check_custom_test_dense() #for dense model
 

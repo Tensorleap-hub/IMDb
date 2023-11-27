@@ -15,6 +15,7 @@ def standardize(comment: str) -> str:
     punctuation_stripped = re.sub('[%s]' % re.escape(string.punctuation), '', html_stripped)
     return punctuation_stripped
 
+
 def prepare_input(tokenizer, input_text: str) -> np.ndarray:
     """
     Prepares the input text by standardizing, tokenizing, and formatting it for model input.
@@ -24,8 +25,10 @@ def prepare_input(tokenizer, input_text: str) -> np.ndarray:
     :return: A NumPy array containing the tokenized and formatted input.
     """
     standard_text = standardize(input_text)
-    tokanized_input = tokenizer([standard_text], padding='max_length', truncation=True, max_length=CONFIG['SEQUENCE_LENGTH'])
+    tokanized_input = tokenizer([standard_text], padding='max_length', truncation=True,
+                                max_length=CONFIG['SEQUENCE_LENGTH'])
     return tokanized_input
+
 
 def prepare_input_dense_model(tokenizer, input_text: str) -> np.ndarray:
     """
