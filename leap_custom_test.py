@@ -5,6 +5,7 @@ import numpy as np
 import onnxruntime
 from keras.losses import BinaryCrossentropy
 
+
 def check_custom_test():
     print("started custom tests")
     responses = preprocess_func()
@@ -51,7 +52,6 @@ def check_custom_test():
         text = tokenizer_decoder(tokenizer, data)
         tokens = text.split()
         input_list = pad_list(tokens)
-        print(f'input text: {input_list}')
 
         # text_gt_visualizer_func
         ohe = {"pos": [0., 1.0], "neg": [1.0, 0.]}
@@ -60,9 +60,9 @@ def check_custom_test():
             text.append("pos")
         else:
             text.append("neg")
-        print(f'gt: {text[0]}')
 
     print("finish tests")
+
 
 def check_custom_test_dense():
     print("started custom tests")
@@ -99,7 +99,6 @@ def check_custom_test_dense():
         text_input = texts[0].split(' ')
         text_input = [text for text in text_input]
         padded_list = pad_list(text_input)
-        print(f'input text: {padded_list}')
 
         labels_names = [CONFIG['LABELS_NAMES'][index] for index in range(y_pred.shape[-1])]
 
@@ -111,12 +110,13 @@ def check_custom_test_dense():
             text.append("pos")
         else:
             text.append("neg")
-        print(f'gt: {text[0]}')
 
     print("finish tests")
 
 
 if __name__ == '__main__':
-    check_custom_test() #for bert model
-    # check_custom_test_dense() #for dense model
+    if MODEL_TYPE == 'dense':
+        check_custom_test_dense()
+    else:
+        check_custom_test()
 
