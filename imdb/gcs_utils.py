@@ -14,7 +14,6 @@ def _connect_to_gcs() -> Bucket:
     gcs_client = storage.Client(project=CONFIG['PROJECT_ID'], credentials=AnonymousCredentials())
     return gcs_client.bucket(CONFIG['BUCKET_NAME'])
 
-
 def _download(cloud_file_path: str, local_file_path: Optional[str] = None) -> str:
     """
     Downloads a file from Google Cloud Storage to a local directory, ensuring it exists locally for further use.

@@ -11,7 +11,7 @@ from code_loader.contract.enums import LeapDataType
 from code_loader.contract.visualizer_classes import LeapText, LeapHorizontalBar
 
 from imdb.config import CONFIG
-from imdb.data.preprocess import download_load_assets
+from imdb.data.preprocess import download_load_assets, MODEL_TYPE
 from imdb.gcs_utils import _download
 from imdb.utils import prepare_input, prepare_input_dense_model
 
@@ -54,7 +54,10 @@ def input_func(idx: int, preprocess: PreprocessResponse):
     with open(local_path, 'r') as f:
         comment = f.read()
     tokenizer = preprocess.data['tokenizer']
-    padded_input = prepare_input(tokenizer, comment)
+    if MODEL_TYPE == 'dense':
+        padded_input = prepare_input_dense_model(tokenizer, comment)  # if dense model
+    else:
+        padded_input = prepare_input(tokenizer, comment)  # if bert model
     return padded_input
 
 
@@ -220,7 +223,7 @@ def text_visualizer_func(input_ids: np.ndarray) -> LeapText:
     return LeapText(padded_list)
 
 
-def text_visualizer_func_dense_model(data: np.ndarray) -> LeapText:
+def text_visualizer_func_dense_model(input_ids: np.ndarray) -> LeapText:
     """
     Converts input data from a dense model into a LeapText object for visualization.
 
@@ -228,11 +231,12 @@ def text_visualizer_func_dense_model(data: np.ndarray) -> LeapText:
     :return: A LeapText object representing the tokenized and padded text for visualization.
     """
     tokenizer = leap_binder.custom_tokenizer
-    texts = tokenizer.sequences_to_texts([data])
+    texts = tokenizer.sequences_to_texts([input_ids])
     text_input = texts[0].split(' ')
     text_input = [text for text in text_input]
     padded_list = pad_list(text_input)
     return LeapText(padded_list)
+
 
 def horizontal_bar_visualizer_with_labels_name(y_pred: npt.NDArray[np.float32]) -> LeapHorizontalBar:
     labels_names = [CONFIG['LABELS_NAMES'][index] for index in range(y_pred.shape[-1])]
@@ -241,14 +245,22 @@ def horizontal_bar_visualizer_with_labels_name(y_pred: npt.NDArray[np.float32]) 
 
 # Binders
 leap_binder.set_preprocess(function=preprocess_func)
-leap_binder.set_input(function=input_ids, name='input_ids')
-leap_binder.set_input(function=attention_masks, name='attention_masks')
-leap_binder.set_input(function=token_type_ids, name='token_type_ids')
+
+if MODEL_TYPE == 'dense':
+    leap_binder.set_input(function=input_tokens, name='input_tokens')
+    leap_binder.set_visualizer(function=text_visualizer_func_dense_model, visualizer_type=LeapDataType.Text,
+                               name='text_from_token_input')
+
+else:
+    leap_binder.set_input(function=input_ids, name='input_ids')
+    leap_binder.set_input(function=attention_masks, name='attention_masks')
+    leap_binder.set_input(function=token_type_ids, name='token_type_ids')
+    leap_binder.set_visualizer(function=text_visualizer_func, visualizer_type=LeapDataType.Text,
+                               name='text_from_token_input')
+
 leap_binder.set_ground_truth(function=gt_sentiment, name='sentiment')
 leap_binder.set_metadata(function=gt_metadata, name='gt')
 leap_binder.set_metadata(function=all_raw_metadata, name='all_raw_metadata')
-leap_binder.set_visualizer(function=text_visualizer_func, visualizer_type=LeapDataType.Text,
-                           name='text_from_token_input')
 leap_binder.set_visualizer(function=horizontal_bar_visualizer_with_labels_name,
                            visualizer_type=LeapDataType.HorizontalBar, name='pred_labels')
 leap_binder.add_prediction(name='sentiment', labels=['positive', 'negative'])
