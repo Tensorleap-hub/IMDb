@@ -215,6 +215,7 @@ def text_visualizer_func(input_ids: np.ndarray) -> LeapText:
     :param input_ids: A NumPy array containing input token IDs.
     :return: A LeapText object representing the tokenized and padded text for visualization.
     """
+    input_ids = np.squeeze(input_ids)
     tokenizer = leap_binder.custom_tokenizer
     data = input_ids.astype(np.int64)
     text = tokenizer_decoder(tokenizer, data)
@@ -230,6 +231,7 @@ def text_visualizer_func_dense_model(input_ids: np.ndarray) -> LeapText:
     :param data: A NumPy array containing input data from a dense model.
     :return: A LeapText object representing the tokenized and padded text for visualization.
     """
+    input_ids = np.squeeze(input_ids)
     tokenizer = leap_binder.custom_tokenizer
     texts = tokenizer.sequences_to_texts([input_ids])
     text_input = texts[0].split(' ')
@@ -239,6 +241,7 @@ def text_visualizer_func_dense_model(input_ids: np.ndarray) -> LeapText:
 
 
 def horizontal_bar_visualizer_with_labels_name(y_pred: npt.NDArray[np.float32]) -> LeapHorizontalBar:
+    y_pred = np.squeeze(y_pred)
     labels_names = [CONFIG['LABELS_NAMES'][index] for index in range(y_pred.shape[-1])]
     return LeapHorizontalBar(y_pred, labels_names)
 
