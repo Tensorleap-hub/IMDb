@@ -13,7 +13,7 @@ def check_custom_test():
     val = responses[1]
     responses_set = train
     dir_path = os.path.dirname(os.path.abspath(__file__))
-    model_path = 'model/fabriceyhc-bert-base-uncased-imdb.onnx'
+    model_path = 'model/fabriceyhc-bert-imdb.onnx'
 
     for idx in range(20):
         input__id = input_ids(idx, responses_set)

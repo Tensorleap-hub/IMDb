@@ -1,5 +1,5 @@
-codeIntegrationId: 66aa4eaf08d4f3506437f990
-projectId: 66aa4ea908d4f3506437f98c
+codeIntegrationId: 6870f2236adc60afa66860b2
+projectId: 67aa758e755c23a6a88981ec
 secretId: ""
 entryFile: leap_binder.py
 include:
@@ -10,3 +10,5 @@ include:
     - imdb/gcs_utils.py
     - imdb/project_config.yaml
     - imdb/utils.py
+    - requirements.txt
+pythonVersion: py38
