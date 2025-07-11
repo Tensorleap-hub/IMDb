@@ -57,6 +57,9 @@ decorators:
   - operation: CategoricalCrossentropy
     data:
       type: Loss
+      arg_names:
+        - prediction
+        - ground_truth
     id: '1026'
     inputs:
       prediction:
@@ -68,11 +71,7 @@ decorators:
         - outputKey: sentiment
           operation: GroundTruth
           id: '1027'
-    outputs:
-      loss:
-        - inputKey: '0'
-          operation: Adam
-          id: '1028'
+    outputs: {}
   - operation: GroundTruth
     data:
       type: GroundTruth
@@ -94,18 +93,6 @@ decorators:
         - inputKey: ground_truth
           operation: Metric
           id: '1032'
-  - operation: Adam
-    data:
-      type: Optimizer
-      custom_input_keys:
-        - 1028-0
-    id: '1028'
-    inputs:
-      '0':
-        - outputKey: loss
-          operation: CategoricalCrossentropy
-          id: '1026'
-    outputs: {}
   - operation: Visualizer
     data:
       type: Visualizer
