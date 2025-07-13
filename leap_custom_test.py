@@ -13,7 +13,7 @@ def check_custom_test():
     val = responses[1]
     responses_set = train
     dir_path = os.path.dirname(os.path.abspath(__file__))
-    model_path = 'model/fabriceyhc-bert-base-uncased-imdb.onnx'
+    model_path = 'model/fabriceyhc-bert-imdb.onnx'
 
     for idx in range(20):
         input__id = input_ids(idx, responses_set)
@@ -35,9 +35,9 @@ def check_custom_test():
 
         y_pred = sess.run([label_name], {input_name_1: np.expand_dims(input__id, 0),
                                          input_name_2: np.expand_dims(attention__mask, 0),
-                                         input_name_3: np.expand_dims(token_type__id, 0)})
+                                         input_name_3: np.expand_dims(token_type__id, 0)})[0]
 
-        class_probabilities = np.exp(y_pred[0]) / np.sum(np.exp(y_pred[0]), axis=1, keepdims=True)
+        class_probabilities = np.exp(y_pred) / np.sum(np.exp(y_pred), axis=1, keepdims=True)
 
         # get loss
         ls = BinaryCrossentropy()(y_true, class_probabilities)
@@ -47,11 +47,9 @@ def check_custom_test():
         all_raw_md = all_raw_metadata(idx, responses_set)
 
         # get visualizer
-        tokenizer = leap_binder.custom_tokenizer
-        data = input__id.astype(np.int64)
-        text = tokenizer_decoder(tokenizer, data)
-        tokens = text.split()
-        input_list = pad_list(tokens)
+        horizontal_bar_visualizer_with_labels_name(y_pred)
+        horizontal_bar_visualizer_with_labels_name(np.expand_dims(np.array(gt, dtype=np.float32), 0))
+        text_visualizer_func(np.expand_dims(input__id, 0))
 
         # text_gt_visualizer_func
         ohe = {"pos": [0., 1.0], "neg": [1.0, 0.]}
@@ -94,11 +92,9 @@ def check_custom_test_dense():
         all_raw_md = all_raw_metadata(idx, responses_set)
 
         # get visualizer
-        tokenizer = leap_binder.custom_tokenizer
-        texts = tokenizer.sequences_to_texts([input__tokens])
-        text_input = texts[0].split(' ')
-        text_input = [text for text in text_input]
-        padded_list = pad_list(text_input)
+        horizontal_bar_visualizer_with_labels_name(y_pred.numpy())
+        horizontal_bar_visualizer_with_labels_name(np.expand_dims(np.array(gt, dtype=np.float32), 0))
+        text_visualizer_func_dense_model(np.expand_dims(input__tokens, 0))
 
         labels_names = [CONFIG['LABELS_NAMES'][index] for index in range(y_pred.shape[-1])]
 
@@ -119,4 +115,3 @@ if __name__ == '__main__':
         check_custom_test_dense()
     else:
         check_custom_test()
-
