@@ -10,13 +10,18 @@ from code_loader.contract.datasetclasses import PreprocessResponse
 from code_loader.contract.enums import LeapDataType
 from code_loader.contract.visualizer_classes import LeapText, LeapHorizontalBar
 from code_loader.inner_leap_binder.leapbinder_decorators import tensorleap_preprocess, tensorleap_input_encoder, \
-    tensorleap_custom_visualizer, tensorleap_gt_encoder, tensorleap_metadata
+    tensorleap_custom_visualizer, tensorleap_gt_encoder, tensorleap_metadata, tensorleap_custom_loss
 
 from imdb.config import CONFIG
 from imdb.data.preprocess import download_load_assets, MODEL_TYPE
 from imdb.gcs_utils import _download
 from imdb.utils import prepare_input, prepare_input_dense_model
+from code_loader.default_losses import categorical_crossentropy
 
+@tensorleap_custom_loss('ce')
+def ce_loss(gt, pred):
+    pred = np.exp(pred) / np.sum(np.exp(pred), axis=1, keepdims=True)
+    return categorical_crossentropy(gt, pred)
 
 # Preprocess Function
 @tensorleap_preprocess()
@@ -63,18 +68,19 @@ def input_func(idx: int, preprocess: PreprocessResponse):
         padded_input = prepare_input(tokenizer, comment)  # if bert model
     return padded_input
 
-@tensorleap_input_encoder('input_tokens')
-def input_tokens(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
-    """
-    Retrieves and returns the input tokens for a specific comment after preprocessing.
+if MODEL_TYPE == 'dense':
+    @tensorleap_input_encoder('input_tokens')
+    def input_tokens(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
+        """
+        Retrieves and returns the input tokens for a specific comment after preprocessing.
 
-    :param idx: The index of the comment for which tokens are retrieved.
-    :param preprocess: preprocessed data.
-    :return: A NumPy array containing the preprocessed input tokens.
-    """
-    padded_input = input_func(idx, preprocess)
-    padded_input = padded_input.squeeze()
-    return padded_input
+        :param idx: The index of the comment for which tokens are retrieved.
+        :param preprocess: preprocessed data.
+        :return: A NumPy array containing the preprocessed input tokens.
+        """
+        padded_input = input_func(idx, preprocess)
+        padded_input = padded_input.squeeze()
+        return padded_input
 
 @tensorleap_input_encoder('input_ids')
 def input_ids(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
@@ -271,5 +277,5 @@ def horizontal_bar_visualizer_with_labels_name(y_pred: npt.NDArray[np.float32]) 
 #                           visualizer_type=LeapDataType.HorizontalBar, name='pred_labels')
 #leap_binder.add_prediction(name='sentiment', labels=['positive', 'negative'])
 
-# if __name__ == '__main__':
-#     leap_binder.check()
+if __name__ == '__main__':
+    leap_binder.check()

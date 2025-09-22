@@ -6,6 +6,7 @@ import onnxruntime
 from keras.losses import BinaryCrossentropy
 from code_loader.contract.datasetclasses import PredictionTypeHandler
 from code_loader.inner_leap_binder.leapbinder_decorators import tensorleap_load_model, integration_test
+from code_loader.default_losses import categorical_crossentropy
 
 prediction_type1 = PredictionTypeHandler('sentiment', ['positive', 'negative'])
 
@@ -30,22 +31,14 @@ def check_custom_test(idx, responses_set):
     # model
     sess = load_model()
     # get inputs
-    #input_name_1 = sess.get_inputs()[0].name #TODO solve
-    #input_name_2 = sess.get_inputs()[1].name #TODO solve
-    #input_name_3 = sess.get_inputs()[2].name #TODO solve
-    input_name_1 = 'input_ids'
-    input_name_2 = 'attention_mask'
-    input_name_3 = 'token_type_ids'
-
-
-    y_pred = sess.run(None, {input_name_1: np.expand_dims(input__id, 0),
-                                     input_name_2: np.expand_dims(attention__mask, 0),
-                                     input_name_3: np.expand_dims(token_type__id, 0)})[0]
-
-    class_probabilities = np.exp(y_pred) / np.sum(np.exp(y_pred), axis=1, keepdims=True)
-
+    input_name_1 = sess.get_inputs()[0].name #TODO solve
+    input_name_2 = sess.get_inputs()[1].name #TODO solve
+    input_name_3 = sess.get_inputs()[2].name #TODO solve
+    y_pred = sess.run(None, {input_name_1: input__id,
+                                     input_name_2: attention__mask,
+                                     input_name_3: token_type__id})[0]
     # get loss
-    ls = BinaryCrossentropy()(y_true, class_probabilities)
+    ls = ce_loss(gt, y_pred)
 
     # get meatdata
     gt_mdata = gt_metadata(idx, responses_set)
@@ -53,18 +46,8 @@ def check_custom_test(idx, responses_set):
 
     # get visualizer
     horizontal_bar_visualizer_with_labels_name(y_pred)
-    horizontal_bar_visualizer_with_labels_name(np.expand_dims(np.array(gt, dtype=np.float32), 0))
-    text_visualizer_func(np.expand_dims(input__id, 0))
-
-    # text_gt_visualizer_func
-    ohe = {"pos": [0., 1.0], "neg": [1.0, 0.]}
-    text = []
-    if (y_true[0].numpy() == np.array(ohe["pos"])).all():
-        text.append("pos")
-    else:
-        text.append("neg")
-
-    print("finish tests")
+    horizontal_bar_visualizer_with_labels_name(gt)
+    text_visualizer_func(input__id)
 
 
 def check_custom_test_dense():
@@ -119,7 +102,3 @@ if __name__ == '__main__':
     responses = preprocess_func()
     train = responses[0]
     check_custom_test(0, train)
-    if MODEL_TYPE == 'dense':
-        check_custom_test_dense()
-    else:
-        check_custom_test()
