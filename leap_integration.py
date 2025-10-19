@@ -5,7 +5,7 @@ import numpy as np
 import onnxruntime
 from keras.losses import BinaryCrossentropy
 from code_loader.contract.datasetclasses import PredictionTypeHandler
-from code_loader.inner_leap_binder.leapbinder_decorators import tensorleap_load_model, integration_test
+from code_loader.inner_leap_binder.leapbinder_decorators import tensorleap_load_model, tensorleap_integration_test
 from code_loader.default_losses import categorical_crossentropy
 
 prediction_type1 = PredictionTypeHandler('sentiment', ['positive', 'negative'])
@@ -17,7 +17,7 @@ def load_model():
     sess = onnxruntime.InferenceSession(os.path.join(dir_path, model_path))
     return sess
 
-@integration_test()
+@tensorleap_integration_test()
 def check_custom_test(idx, responses_set):
     print("started custom tests")
     input__id = input_ids(idx, responses_set)
