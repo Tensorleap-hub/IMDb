@@ -87,7 +87,6 @@ def check_custom_test_dense():
         labels_names = [CONFIG['LABELS_NAMES'][index] for index in range(y_pred.shape[-1])]
 
         # text_gt_visualizer_func
-        # ohe = {"pos": [0., 1.0], "neg": [1.0, 0.]}
         ohe = {"pos": [1.0, 0.], "neg": [0., 1.0]}
         text = []
         if (y_true[0].numpy() == np.array(ohe["pos"])).all():
