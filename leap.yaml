@@ -1,10 +1,10 @@
-codeIntegrationId: 6871248434d37b40708d32cd
-projectId: 6808b7995601e712979f488d
+codeIntegrationId: 69025a7ef4e32db26f006d17
+projectId: 69025a76f4e32db26f006d10
 secretId: ""
-entryFile: leap_binder.py
+entryFile: leap_integration.py
 include:
     - leap_binder.py
-    - leap_custom_test.py
+    - leap_integration.py
     - imdb/data/preprocess.py
     - imdb/config.py
     - imdb/gcs_utils.py

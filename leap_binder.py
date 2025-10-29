@@ -9,14 +9,22 @@ from code_loader import leap_binder
 from code_loader.contract.datasetclasses import PreprocessResponse
 from code_loader.contract.enums import LeapDataType
 from code_loader.contract.visualizer_classes import LeapText, LeapHorizontalBar
+from code_loader.inner_leap_binder.leapbinder_decorators import tensorleap_preprocess, tensorleap_input_encoder, \
+    tensorleap_custom_visualizer, tensorleap_gt_encoder, tensorleap_metadata, tensorleap_custom_loss
 
 from imdb.config import CONFIG
 from imdb.data.preprocess import download_load_assets, MODEL_TYPE
 from imdb.gcs_utils import _download
 from imdb.utils import prepare_input, prepare_input_dense_model
+from code_loader.default_losses import categorical_crossentropy
 
+@tensorleap_custom_loss('ce')
+def ce_loss(gt, pred):
+    pred = np.exp(pred) / np.sum(np.exp(pred), axis=1, keepdims=True)
+    return categorical_crossentropy(gt, pred)
 
 # Preprocess Function
+@tensorleap_preprocess()
 def preprocess_func() -> List[PreprocessResponse]:
     """
     Performs data preprocessing and prepares training and validation data for a machine learning model.
@@ -60,20 +68,21 @@ def input_func(idx: int, preprocess: PreprocessResponse):
         padded_input = prepare_input(tokenizer, comment)  # if bert model
     return padded_input
 
+if MODEL_TYPE == 'dense':
+    @tensorleap_input_encoder('input_tokens')
+    def input_tokens(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
+        """
+        Retrieves and returns the input tokens for a specific comment after preprocessing.
 
-def input_tokens(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
-    """
-    Retrieves and returns the input tokens for a specific comment after preprocessing.
+        :param idx: The index of the comment for which tokens are retrieved.
+        :param preprocess: preprocessed data.
+        :return: A NumPy array containing the preprocessed input tokens.
+        """
+        padded_input = input_func(idx, preprocess)
+        padded_input = padded_input.squeeze()
+        return padded_input
 
-    :param idx: The index of the comment for which tokens are retrieved.
-    :param preprocess: preprocessed data.
-    :return: A NumPy array containing the preprocessed input tokens.
-    """
-    padded_input = input_func(idx, preprocess)
-    padded_input = padded_input.squeeze()
-    return padded_input
-
-
+@tensorleap_input_encoder('input_ids')
 def input_ids(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     """
     Retrieves and returns the input IDs for a specific comment after preprocessing.
@@ -84,10 +93,10 @@ def input_ids(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     """
     padded_input = input_func(idx, preprocess)
     padded_input = np.array(padded_input['input_ids'])
-    padded_input = padded_input.squeeze()
+    padded_input = padded_input.squeeze().astype(np.float32)
     return padded_input
 
-
+@tensorleap_input_encoder('attention_masks')
 def attention_masks(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     """
     Retrieves and returns the attention masks for a specific comment after preprocessing.
@@ -98,10 +107,10 @@ def attention_masks(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     """
     padded_input = input_func(idx, preprocess)
     padded_input = np.array(padded_input['attention_mask'])
-    padded_input = padded_input.squeeze()
+    padded_input = padded_input.squeeze().astype(np.float32)
     return np.array(padded_input)
 
-
+@tensorleap_input_encoder('token_type_ids')
 def token_type_ids(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     """
     Extracts and returns the token type IDs for a specific comment after preprocessing.
@@ -112,20 +121,20 @@ def token_type_ids(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     """
     padded_input = input_func(idx, preprocess)
     padded_input = np.array(padded_input['token_type_ids'])
-    padded_input = padded_input.squeeze()
+    padded_input = padded_input.squeeze().astype(np.float32)
     return np.array(padded_input)
 
-
-def gt_sentiment(idx: int, preprocess: PreprocessResponse) -> List[float]:
+@tensorleap_gt_encoder('sentiment')
+def gt_sentiment(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     """
     :param idx: The index of the comment for which sentiment values are retrieved.
     :param preprocess: preprocessed data.
     :return: A list of float values representing the sentiment of the comment.
     """
     gt_str = preprocess.data['df']['gt'][idx]
-    return preprocess.data['ohe'][gt_str]
+    return np.array(preprocess.data['ohe'][gt_str]).astype(np.float32)
 
-
+@tensorleap_metadata('gt')
 def gt_metadata(idx: int, preprocess: PreprocessResponse) -> str:
     """
     Retrieves and returns the sentiment metadata (positive or negative) for a specific comment.
@@ -139,7 +148,7 @@ def gt_metadata(idx: int, preprocess: PreprocessResponse) -> str:
     else:
         return "negative"
 
-
+@tensorleap_metadata('all_raw_metadata')
 def all_raw_metadata(idx: int, preprocess: PreprocessResponse) -> Dict:
     """
     Retrieves and returns various raw metadata values for a specific comment.
@@ -207,7 +216,7 @@ def pad_list(input_list: List, desired_length: int = CONFIG['SEQUENCE_LENGTH'], 
 
     return padded_list
 
-
+@tensorleap_custom_visualizer('text_from_token_input_undense', LeapDataType.Text)
 def text_visualizer_func(input_ids: np.ndarray) -> LeapText:
     """
     Converts input token IDs into a LeapText object for visualization.
@@ -223,7 +232,7 @@ def text_visualizer_func(input_ids: np.ndarray) -> LeapText:
     padded_list = pad_list(text_input)
     return LeapText(padded_list)
 
-
+@tensorleap_custom_visualizer('text_from_token_input_dense', LeapDataType.Text)
 def text_visualizer_func_dense_model(input_ids: np.ndarray) -> LeapText:
     """
     Converts input data from a dense model into a LeapText object for visualization.
@@ -239,7 +248,7 @@ def text_visualizer_func_dense_model(input_ids: np.ndarray) -> LeapText:
     padded_list = pad_list(text_input)
     return LeapText(padded_list)
 
-
+@tensorleap_custom_visualizer('pred_labels', LeapDataType.HorizontalBar)
 def horizontal_bar_visualizer_with_labels_name(y_pred: npt.NDArray[np.float32]) -> LeapHorizontalBar:
     y_pred = np.squeeze(y_pred)
     labels_names = [CONFIG['LABELS_NAMES'][index] for index in range(y_pred.shape[-1])]
@@ -247,26 +256,26 @@ def horizontal_bar_visualizer_with_labels_name(y_pred: npt.NDArray[np.float32]) 
 
 
 # Binders
-leap_binder.set_preprocess(function=preprocess_func)
+#leap_binder.set_preprocess(function=preprocess_func)
 
-if MODEL_TYPE == 'dense':
-    leap_binder.set_input(function=input_tokens, name='input_tokens')
-    leap_binder.set_visualizer(function=text_visualizer_func_dense_model, visualizer_type=LeapDataType.Text,
-                               name='text_from_token_input')
+# if MODEL_TYPE == 'dense':
+    #leap_binder.set_input(function=input_tokens, name='input_tokens')
+    # leap_binder.set_visualizer(function=text_visualizer_func_dense_model, visualizer_type=LeapDataType.Text,
+    #                            name='text_from_token_input')
 
-else:
-    leap_binder.set_input(function=input_ids, name='input_ids')
-    leap_binder.set_input(function=attention_masks, name='attention_masks')
-    leap_binder.set_input(function=token_type_ids, name='token_type_ids')
-    leap_binder.set_visualizer(function=text_visualizer_func, visualizer_type=LeapDataType.Text,
-                               name='text_from_token_input')
+# else:
+    #leap_binder.set_input(function=input_ids, name='input_ids')
+    #leap_binder.set_input(function=attention_masks, name='attention_masks')
+   # leap_binder.set_input(function=token_type_ids, name='token_type_ids')
+   #  leap_binder.set_visualizer(function=text_visualizer_func, visualizer_type=LeapDataType.Text,
+   #                             name='text_from_token_input')
 
-leap_binder.set_ground_truth(function=gt_sentiment, name='sentiment')
-leap_binder.set_metadata(function=gt_metadata, name='gt')
-leap_binder.set_metadata(function=all_raw_metadata, name='all_raw_metadata')
-leap_binder.set_visualizer(function=horizontal_bar_visualizer_with_labels_name,
-                           visualizer_type=LeapDataType.HorizontalBar, name='pred_labels')
-leap_binder.add_prediction(name='sentiment', labels=['positive', 'negative'])
+#leap_binder.set_ground_truth(function=gt_sentiment, name='sentiment')
+#leap_binder.set_metadata(function=gt_metadata, name='gt')
+#leap_binder.set_metadata(function=all_raw_metadata, name='all_raw_metadata')
+#leap_binder.set_visualizer(function=horizontal_bar_visualizer_with_labels_name,
+#                           visualizer_type=LeapDataType.HorizontalBar, name='pred_labels')
+#leap_binder.add_prediction(name='sentiment', labels=['positive', 'negative'])
 
 if __name__ == '__main__':
     leap_binder.check()
