@@ -13,7 +13,7 @@ google-cloud-storage = "==2.4.0"
 transformers = "==4.31.0"
 tensorflow = {version = "2.12.0", markers = "sys_platform != 'darwin'"}
 tensorflow-macos = {version = "2.12.0", markers = "sys_platform == 'darwin'"}
-code-loader = "1.0.143.dev4"
+code-loader = "^1.0.145"
 onnxruntime = "1.12"
 jax = "==0.4.30"
 jaxlib = "==0.4.30"
