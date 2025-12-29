@@ -7,7 +7,7 @@ import tensorflow as tf
 # Tensorleap imports
 from code_loader import leap_binder
 from code_loader.contract.datasetclasses import PreprocessResponse
-from code_loader.contract.enums import LeapDataType
+from code_loader.contract.enums import LeapDataType, DataStateType
 from code_loader.contract.visualizer_classes import LeapText, LeapHorizontalBar
 from code_loader.inner_leap_binder.leapbinder_decorators import tensorleap_preprocess, tensorleap_input_encoder, \
     tensorleap_custom_visualizer, tensorleap_gt_encoder, tensorleap_metadata, tensorleap_custom_loss
@@ -41,8 +41,8 @@ def preprocess_func() -> List[PreprocessResponse]:
                         df[df['gt'] == 'neg'][train_label_size:train_label_size + val_label_size]], ignore_index=True)
     ohe = {"pos": [0., 1.0], "neg": [1.0, 0.]}
 
-    train = PreprocessResponse(length=2 * train_label_size, data={"df": train_df, "tokenizer": tokenizer, "ohe": ohe})
-    val = PreprocessResponse(length=2 * val_label_size, data={"df": val_df, "tokenizer": tokenizer, "ohe": ohe})
+    train = PreprocessResponse(length=2 * train_label_size, data={"df": train_df, "tokenizer": tokenizer, "ohe": ohe},state=DataStateType.training)
+    val = PreprocessResponse(length=2 * val_label_size, data={"df": val_df, "tokenizer": tokenizer, "ohe": ohe},state=DataStateType.validation)
     response = [train, val]
     leap_binder.custom_tokenizer = tokenizer
 
@@ -82,7 +82,7 @@ if MODEL_TYPE == 'dense':
         padded_input = padded_input.squeeze()
         return padded_input
 
-@tensorleap_input_encoder('input_ids')
+@tensorleap_input_encoder('input_ids',channel_dim=-1)
 def input_ids(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     """
     Retrieves and returns the input IDs for a specific comment after preprocessing.
@@ -96,7 +96,7 @@ def input_ids(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     padded_input = padded_input.squeeze().astype(np.float32)
     return padded_input
 
-@tensorleap_input_encoder('attention_masks')
+@tensorleap_input_encoder('attention_masks',channel_dim=-1)
 def attention_masks(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     """
     Retrieves and returns the attention masks for a specific comment after preprocessing.
@@ -110,7 +110,7 @@ def attention_masks(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     padded_input = padded_input.squeeze().astype(np.float32)
     return np.array(padded_input)
 
-@tensorleap_input_encoder('token_type_ids')
+@tensorleap_input_encoder('token_type_ids',channel_dim=-1)
 def token_type_ids(idx: int, preprocess: PreprocessResponse) -> np.ndarray:
     """
     Extracts and returns the token type IDs for a specific comment after preprocessing.
