@@ -6,7 +6,6 @@ import onnxruntime
 from keras.losses import BinaryCrossentropy
 from code_loader.contract.datasetclasses import PredictionTypeHandler
 from code_loader.inner_leap_binder.leapbinder_decorators import tensorleap_load_model, tensorleap_integration_test
-from code_loader.default_losses import categorical_crossentropy
 
 prediction_type1 = PredictionTypeHandler('sentiment', ['positive', 'negative'],channel_dim=-1)
 
